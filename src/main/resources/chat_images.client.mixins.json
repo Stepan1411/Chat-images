@@ -1,0 +1,18 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "ru.stepan1411.chat_images.mixin.client",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "ChatScreenMixin",
+    "ChatGraphicsAccessImplementationsMixin",
+    "ChatComponentMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "refmap": "Chatimages-refmap.json",
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

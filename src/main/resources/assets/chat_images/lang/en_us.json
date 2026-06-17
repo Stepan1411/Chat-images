@@ -1,0 +1,13 @@
+{
+  "chat_images.confirm": "Confirm image",
+  "chat_images.send": "Send image",
+  "chat_images.send_image": "Send image",
+  "chat_images.select_file": "Select PNG Image",
+  "chat_images.confirm_hint": "Click confirm to send, cancel to discard",
+  "chat_images.load_error": "Failed to load image",
+  "chat_images.sent": "[ChatImages] You sent an image",
+  "chat_images.viewer": "Image Viewer",
+  "chat_images.image_removed": "Image removed",
+  "chat_images.scroll_hint": "Scroll to zoom, drag to pan, right-click to close",
+  "chat_images.server_not_supported": "Server does not have Chat Images installed"
+}

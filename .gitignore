@@ -1,0 +1,9 @@
+run
+.gradle
+/build/classes
+/build/devlibs
+/build/loom-cache
+/build/processIncludeJars
+/build/reports
+/build/resources
+/build/tmp

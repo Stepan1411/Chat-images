@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "chat_images",
+  "version": "${version}",
+  "name": "Chat images",
+  "description": "Images in minecraft chat",
+  "authors": ["Stepan1411"],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/chat_images/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-datagen": [
+      "ru.stepan1411.chat_images.client.Chat_imagesDataGenerator"
+    ],
+    "client": [
+      "ru.stepan1411.chat_images.client.Chat_imagesClient"
+    ],
+    "main": [
+      "ru.stepan1411.chat_images.Chat_images"
+    ]
+  },
+  "mixins": [
+    "chat_images.mixins.json",
+    {
+      "config": "chat_images.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  },
+  "breaks": {
+    "chatanimation": "*"
+  }
+}

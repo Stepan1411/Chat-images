@@ -1,0 +1,13 @@
+{
+  "chat_images.confirm": "Подтверждение изображения",
+  "chat_images.send": "Отправить",
+  "chat_images.send_image": "Отправить изображение",
+  "chat_images.select_file": "Выберите PNG изображение",
+  "chat_images.confirm_hint": "Нажмите галочку для отправки, крестик для отмены",
+  "chat_images.load_error": "Не удалось загрузить изображение",
+  "chat_images.sent": "[ChatImages] Вы отправили изображение",
+  "chat_images.viewer": "Просмотр изображения",
+  "chat_images.image_removed": "Изображение удалено",
+  "chat_images.scroll_hint": "Колёсико — зум, зажим — перемещение, ПКМ — закрыть",
+  "chat_images.server_not_supported": "На сервере не установлен Chat Images"
+}
