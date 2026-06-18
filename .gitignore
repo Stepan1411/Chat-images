@@ -7,3 +7,7 @@ run
 /build/reports
 /build/resources
 /build/tmp
+/chat_images_plugin/build/reports
+/chat_images_plugin/build/classes
+/chat_images_plugin/build/resources
+/chat_images_plugin/build/tmp

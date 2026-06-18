@@ -159,9 +159,10 @@ abstract class ChatScreenMixin extends Screen {
                             minecraft.execute(() -> minecraft.player.displayClientMessage(Component.literal("§c[ChatImages] Unsupported image format"), true));
                             return;
                         }
-                        final byte[] finalBytes = pngBytes;
+                        final byte[] sendBytes = fileBytes;
+                        final byte[] previewBytes = pngBytes;
                         minecraft.execute(() ->
-                                minecraft.setScreen(new ImageConfirmScreen(this, finalBytes, fileName, true)));
+                                minecraft.setScreen(new ImageConfirmScreen(this, sendBytes, previewBytes, fileName, true)));
                     } else {
                         minecraft.execute(() ->
                                 minecraft.player.displayClientMessage(Component.literal("§e[ChatImages] Video/audio support is under development"), true));

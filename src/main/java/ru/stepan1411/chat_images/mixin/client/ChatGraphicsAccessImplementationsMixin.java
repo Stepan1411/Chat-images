@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import ru.stepan1411.chat_images.client.ChatGraphicsHolder;
+import ru.stepan1411.chat_images.client.Chat_imagesClient;
 import ru.stepan1411.chat_images.client.ClickableImageTracker;
 import ru.stepan1411.chat_images.client.ImageChatStorage;
 
@@ -82,7 +83,8 @@ abstract class ChatGraphicsAccessImplementationsMixin {
         if (tex == null || tex.getPixels() == null) return;
 
         int texW = tex.getPixels().getWidth();
-        int texH = tex.getPixels().getHeight();
+        int texH = ImageChatStorage.getFrameHeight(mainUuid);
+        if (texH < 0) texH = tex.getPixels().getHeight();
 
         float aspect = (float) texW / texH;
         int drawWidth, drawHeight;
@@ -94,6 +96,11 @@ abstract class ChatGraphicsAccessImplementationsMixin {
             drawWidth = Math.max(1, (int) (MAX_IMAGE_HEIGHT * aspect));
         }
 
+        int frameCount = ImageChatStorage.getFrameCount(mainUuid);
+        int currentFrame = ImageChatStorage.getCurrentFrame(mainUuid);
+        float frameUnit = 1.0f / frameCount;
+        float frameV = frameUnit * currentFrame;
+
         int textWidth = chatImages_imageTextWidths.getOrDefault(mainUuid, 60);
         int baseX = x2 + 2 + textWidth + 8;
 
@@ -101,8 +108,8 @@ abstract class ChatGraphicsAccessImplementationsMixin {
             int index = Integer.parseInt(parts[2]);
             int spacerCount = Integer.parseInt(parts[3]);
 
-            float vMin = (float) index / spacerCount;
-            float vMax = (float) (index + 1) / spacerCount;
+            float vMin = frameV + frameUnit * index / spacerCount;
+            float vMax = frameV + frameUnit * (index + 1) / spacerCount;
 
             if (guiGraphics != null) {
                 guiGraphics.blit(texId, baseX, y1 - 1,
@@ -115,7 +122,7 @@ abstract class ChatGraphicsAccessImplementationsMixin {
             if (drawHeight <= 9 && guiGraphics != null) {
                 guiGraphics.blit(texId, baseX, y1 - 1,
                         baseX + drawWidth, y1 - 1 + drawHeight,
-                        0.0f, 1.0f, 0.0f, 1.0f);
+                        0.0f, 1.0f, frameV, frameV + frameUnit);
             }
 
             ClickableImageTracker.add(mainUuid, baseX, y1 + 1, drawWidth, 9);

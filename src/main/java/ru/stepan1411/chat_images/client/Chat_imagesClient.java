@@ -53,44 +53,46 @@ public class Chat_imagesClient implements ClientModInitializer {
 
                 Minecraft client = context.client();
                 client.execute(() -> {
-                    byte[] pngBytes = FileUtil.convertToPng(fileData);
-                    if (pngBytes != null) {
-                        UUID imageId = ImageChatStorage.store(pngBytes, senderName);
-                        if (imageId != null) {
+                    UUID imageId = ImageChatStorage.storeAnimated(fileData, senderName);
+                    if (imageId == null) {
+                        byte[] pngBytes = FileUtil.convertToPng(fileData);
+                        if (pngBytes != null) {
+                            imageId = ImageChatStorage.store(pngBytes, senderName);
+                        } else {
+                            String ext = FileUtil.getExtension(senderName.contains(".") ? senderName : "");
+                            if (ext.isEmpty()) ext = "file";
+
+                            UUID fileId = FileChatStorage.store(fileData, senderName, senderName);
+                            int iconColor = FileUtil.isVideo(ext) ? 0xFF4488FF : FileUtil.isAudio(ext) ? 0xFF44FF44 : 0xFF888888;
+                            NativeImage icon = new NativeImage(16, 16, false);
+                            for (int y = 0; y < 16; y++) {
+                                for (int x = 0; x < 16; x++) {
+                                    icon.setPixel(x, y, iconColor);
+                                }
+                            }
+                            String suffix = fileId.toString().replace("-", "");
+                            DynamicTexture tex = new DynamicTexture(() -> "chat_file_" + suffix, icon);
+                            Identifier texId = Identifier.fromNamespaceAndPath(Chat_images.MOD_ID, "file/" + suffix);
+                            Minecraft.getInstance().getTextureManager().register(texId, tex);
+                            tex.upload();
+                            ImageChatStorage.storeTexture(fileId, tex, texId, senderName);
+
                             if (client.gui != null) {
                                 client.gui.getChat().addMessage(
                                         Component.literal("<" + senderName + ">"),
                                         null,
-                                        new GuiMessageTag(0, null, null, "ChatImages#" + imageId)
+                                        new GuiMessageTag(0, null, null, "ChatImages#" + fileId)
                                 );
                             }
+                            return;
                         }
-                    } else {
-                        String ext = FileUtil.getExtension(senderName.contains(".") ? senderName : "");
-                        if (ext.isEmpty()) ext = "file";
-
-                        UUID fileId = FileChatStorage.store(fileData, senderName, senderName);
-                        int iconColor = FileUtil.isVideo(ext) ? 0xFF4488FF : FileUtil.isAudio(ext) ? 0xFF44FF44 : 0xFF888888;
-                        NativeImage icon = new NativeImage(16, 16, false);
-                        for (int y = 0; y < 16; y++) {
-                            for (int x = 0; x < 16; x++) {
-                                icon.setPixel(x, y, iconColor);
-                            }
-                        }
-                        String suffix = fileId.toString().replace("-", "");
-                        DynamicTexture tex = new DynamicTexture(() -> "chat_file_" + suffix, icon);
-                        Identifier texId = Identifier.fromNamespaceAndPath(Chat_images.MOD_ID, "file/" + suffix);
-                        Minecraft.getInstance().getTextureManager().register(texId, tex);
-                        tex.upload();
-                        ImageChatStorage.storeTexture(fileId, tex, texId, senderName);
-
-                        if (client.gui != null) {
-                            client.gui.getChat().addMessage(
-                                    Component.literal("<" + senderName + ">"),
-                                    null,
-                                    new GuiMessageTag(0, null, null, "ChatImages#" + fileId)
-                            );
-                        }
+                    }
+                    if (imageId != null && client.gui != null) {
+                        client.gui.getChat().addMessage(
+                                Component.literal("<" + senderName + ">"),
+                                null,
+                                new GuiMessageTag(0, null, null, "ChatImages#" + imageId)
+                        );
                     }
                 });
             });

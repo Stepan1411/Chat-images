@@ -37,7 +37,8 @@ public class ImageConfirmScreen extends OverlayScreen {
             Identifier.fromNamespaceAndPath(Chat_images.MOD_ID, "cancel")
     );
 
-    private final byte[] fileData;
+    private final byte[] sendBytes;
+    private final byte[] previewBytes;
     private final String fileName;
     private final boolean isImage;
     private DynamicTexture previewTexture;
@@ -54,10 +55,13 @@ public class ImageConfirmScreen extends OverlayScreen {
     private double dragOffsetY;
     private ImageButton confirmButton;
     private ImageButton cancelButton;
+    private UUID previewUuid;
+    private boolean confirmed = false;
 
-    public ImageConfirmScreen(Screen parent, byte[] fileData, String fileName, boolean isImage) {
+    public ImageConfirmScreen(Screen parent, byte[] sendBytes, byte[] previewBytes, String fileName, boolean isImage) {
         super(Component.translatable("chat_images.confirm"), parent);
-        this.fileData = fileData;
+        this.sendBytes = sendBytes;
+        this.previewBytes = previewBytes;
         this.fileName = fileName;
         this.isImage = isImage;
     }
@@ -92,32 +96,46 @@ public class ImageConfirmScreen extends OverlayScreen {
     }
 
     private void loadPreview() {
-        try {
-            NativeImage nativeImage = NativeImage.read(new ByteArrayInputStream(fileData));
-            imageWidth = nativeImage.getWidth();
-            imageHeight = nativeImage.getHeight();
-            previewTexture = new DynamicTexture(() -> "chat_images_preview", nativeImage);
-            previewId = Identifier.fromNamespaceAndPath(Chat_images.MOD_ID, "preview_" + UUID.randomUUID().toString().replace("-", ""));
-            Minecraft.getInstance().getTextureManager().register(previewId, previewTexture);
-            previewTexture.upload();
-        } catch (IOException e) {
-            Chat_images.LOGGER.error("Failed to load preview", e);
+        UUID animUuid = ImageChatStorage.storeAnimated(sendBytes, Minecraft.getInstance().getUser().getName());
+        if (animUuid != null) {
+            previewUuid = animUuid;
+            previewId = ImageChatStorage.getTextureId(animUuid);
+            imageWidth = ImageChatStorage.getFrameWidth(animUuid);
+            imageHeight = ImageChatStorage.getFrameHeight(animUuid);
+        } else {
+            try {
+                NativeImage nativeImage = NativeImage.read(new ByteArrayInputStream(previewBytes));
+                imageWidth = nativeImage.getWidth();
+                imageHeight = nativeImage.getHeight();
+                previewTexture = new DynamicTexture(() -> "chat_images_preview", nativeImage);
+                previewId = Identifier.fromNamespaceAndPath(Chat_images.MOD_ID, "preview_" + UUID.randomUUID().toString().replace("-", ""));
+                Minecraft.getInstance().getTextureManager().register(previewId, previewTexture);
+                previewTexture.upload();
+            } catch (IOException e) {
+                Chat_images.LOGGER.error("Failed to load preview", e);
+            }
         }
     }
 
     private void sendFile() {
         int offset = 0;
-        while (offset < fileData.length) {
-            int chunkSize = Math.min(ImageDataC2SPayload.MAX_CHUNK_SIZE, fileData.length - offset);
+        while (offset < sendBytes.length) {
+            int chunkSize = Math.min(ImageDataC2SPayload.MAX_CHUNK_SIZE, sendBytes.length - offset);
             byte[] chunk = new byte[chunkSize];
-            System.arraycopy(fileData, offset, chunk, 0, chunkSize);
+            System.arraycopy(sendBytes, offset, chunk, 0, chunkSize);
             offset += chunkSize;
             ClientPlayNetworking.send(new ImageDataC2SPayload(chunk));
         }
-        ClientPlayNetworking.send(new ImageEndC2SPayload(fileData.length));
+        ClientPlayNetworking.send(new ImageEndC2SPayload(sendBytes.length));
 
         if (isImage) {
-            UUID imageId = ImageChatStorage.store(fileData, Minecraft.getInstance().getUser().getName());
+            UUID imageId = previewUuid;
+            if (imageId == null) {
+                imageId = ImageChatStorage.storeAnimated(sendBytes, Minecraft.getInstance().getUser().getName());
+                if (imageId == null) {
+                    imageId = ImageChatStorage.store(previewBytes, Minecraft.getInstance().getUser().getName());
+                }
+            }
             if (imageId != null) {
                 Minecraft minecraft = Minecraft.getInstance();
                 if (minecraft.gui != null) {
@@ -131,7 +149,7 @@ public class ImageConfirmScreen extends OverlayScreen {
         } else {
             Minecraft minecraft = Minecraft.getInstance();
             String ext = FileUtil.getExtension(fileName);
-            UUID fileId = FileChatStorage.store(fileData, fileName, Minecraft.getInstance().getUser().getName());
+            UUID fileId = FileChatStorage.store(sendBytes, fileName, Minecraft.getInstance().getUser().getName());
             int iconColor = FileUtil.isVideo(ext) ? 0xFF4488FF : FileUtil.isAudio(ext) ? 0xFF44FF44 : 0xFF888888;
             NativeImage icon = new NativeImage(16, 16, false);
             for (int y = 0; y < 16; y++) {
@@ -154,6 +172,7 @@ public class ImageConfirmScreen extends OverlayScreen {
             }
         }
 
+        confirmed = true;
         onClose();
     }
 
@@ -258,7 +277,15 @@ public class ImageConfirmScreen extends OverlayScreen {
         int x = cx - imgW / 2 + (int) offsetX;
         int y = cy - imgH / 2 + (int) offsetY;
 
-        guiGraphics.blit(previewId, x, y, x + imgW, y + imgH, 0.0f, 1.0f, 0.0f, 1.0f);
+        if (previewUuid != null && ImageChatStorage.getFrameCount(previewUuid) > 1) {
+            int currentFrame = ImageChatStorage.getCurrentFrame(previewUuid);
+            int frameCount = ImageChatStorage.getFrameCount(previewUuid);
+            float vMin = (float) currentFrame / frameCount;
+            float vMax = (float) (currentFrame + 1) / frameCount;
+            guiGraphics.blit(previewId, x, y, x + imgW, y + imgH, 0.0f, 1.0f, vMin, vMax);
+        } else {
+            guiGraphics.blit(previewId, x, y, x + imgW, y + imgH, 0.0f, 1.0f, 0.0f, 1.0f);
+        }
 
         String info = imageWidth + "x" + imageHeight + "  " + String.format("%.0f", zoom * 100) + "%";
         guiGraphics.drawString(font, info, 10, height - 20, 0xFFFFFFFF);
@@ -273,18 +300,24 @@ public class ImageConfirmScreen extends OverlayScreen {
 
         guiGraphics.drawString(font, Component.literal("§l" + fileName), cx - font.width(fileName) / 2, cy - 20, 0xFFFFFFFF);
         guiGraphics.drawString(font, Component.literal("Type: " + type + " (." + ext + ")"), cx - font.width("Type: " + type + " (." + ext + ")") / 2, cy + 5, 0xFFAAAAAA);
-        guiGraphics.drawString(font, Component.literal("Size: " + FileUtil.formatFileSize(fileData.length)), cx - font.width("Size: " + FileUtil.formatFileSize(fileData.length)) / 2, cy + 20, 0xFFAAAAAA);
+        guiGraphics.drawString(font, Component.literal("Size: " + FileUtil.formatFileSize(sendBytes.length)), cx - font.width("Size: " + FileUtil.formatFileSize(sendBytes.length)) / 2, cy + 20, 0xFFAAAAAA);
         guiGraphics.drawString(font, Component.translatable("chat_images.confirm_hint"), cx - font.width(Component.translatable("chat_images.confirm_hint")) / 2, cy + 45, 0xFF666666);
     }
 
     @Override
     public void removed() {
         super.removed();
-        if (previewId != null) {
-            Minecraft.getInstance().getTextureManager().release(previewId);
-        }
-        if (previewTexture != null) {
-            previewTexture.close();
+        if (previewUuid != null) {
+            if (!confirmed) {
+                ImageChatStorage.remove(previewUuid);
+            }
+        } else {
+            if (previewId != null) {
+                Minecraft.getInstance().getTextureManager().release(previewId);
+            }
+            if (previewTexture != null) {
+                previewTexture.close();
+            }
         }
     }
 }

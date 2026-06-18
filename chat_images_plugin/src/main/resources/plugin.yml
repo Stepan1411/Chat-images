@@ -1,0 +1,6 @@
+name: Chat images plugin
+version: '${version}'
+
+main: ru.stepan1411.chatImagesPlugin.ChatImagesPlugin
+api-version: '1.21.11'
+load: POSTWORLD

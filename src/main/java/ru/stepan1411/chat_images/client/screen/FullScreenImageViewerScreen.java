@@ -74,19 +74,26 @@ public class FullScreenImageViewerScreen extends OverlayScreen {
         var nativeImage = ImageChatStorage.getTexture(imageId).getPixels();
         if (nativeImage == null) return true;
 
-        int texWidth = nativeImage.getWidth();
-        int texHeight = nativeImage.getHeight();
-        double fitScale = Math.min((double) width / texWidth, (double) height / texHeight) * 0.85;
+        int frameCount = ImageChatStorage.getFrameCount(imageId);
+        int dispW, dispH;
+        if (frameCount > 1) {
+            dispW = ImageChatStorage.getFrameWidth(imageId);
+            dispH = ImageChatStorage.getFrameHeight(imageId);
+        } else {
+            dispW = nativeImage.getWidth();
+            dispH = nativeImage.getHeight();
+        }
+        double fitScale = Math.min((double) width / dispW, (double) height / dispH) * 0.85;
         int cx = width / 2;
         int cy = height / 2;
 
-        double fracX = (mouseX - (cx - texWidth * fitScale * zoom / 2 + offsetX)) / (texWidth * fitScale * zoom);
-        double fracY = (mouseY - (cy - texHeight * fitScale * zoom / 2 + offsetY)) / (texHeight * fitScale * zoom);
+        double fracX = (mouseX - (cx - dispW * fitScale * zoom / 2 + offsetX)) / (dispW * fitScale * zoom);
+        double fracY = (mouseY - (cy - dispH * fitScale * zoom / 2 + offsetY)) / (dispH * fitScale * zoom);
 
         zoom = newZoom;
 
-        offsetX = mouseX - cx + texWidth * fitScale * zoom * (0.5 - fracX);
-        offsetY = mouseY - cy + texHeight * fitScale * zoom * (0.5 - fracY);
+        offsetX = mouseX - cx + dispW * fitScale * zoom * (0.5 - fracX);
+        offsetY = mouseY - cy + dispH * fitScale * zoom * (0.5 - fracY);
 
         return true;
     }
@@ -133,13 +140,24 @@ public class FullScreenImageViewerScreen extends OverlayScreen {
             return;
         }
 
-        int texWidth = nativeImage.getWidth();
-        int texHeight = nativeImage.getHeight();
+        int frameCount = ImageChatStorage.getFrameCount(imageId);
+        int dispW, dispH;
+        float vMin = 0.0f, vMax = 1.0f;
+        if (frameCount > 1) {
+            dispW = ImageChatStorage.getFrameWidth(imageId);
+            dispH = ImageChatStorage.getFrameHeight(imageId);
+            int currentFrame = ImageChatStorage.getCurrentFrame(imageId);
+            vMin = (float) currentFrame / frameCount;
+            vMax = (float) (currentFrame + 1) / frameCount;
+        } else {
+            dispW = nativeImage.getWidth();
+            dispH = nativeImage.getHeight();
+        }
 
-        double fitScale = Math.min((double) width / texWidth, (double) height / texHeight) * 0.85;
+        double fitScale = Math.min((double) width / dispW, (double) height / dispH) * 0.85;
 
-        int imgW = (int) (texWidth * fitScale * zoom);
-        int imgH = (int) (texHeight * fitScale * zoom);
+        int imgW = (int) (dispW * fitScale * zoom);
+        int imgH = (int) (dispH * fitScale * zoom);
 
         int centerX = width / 2;
         int centerY = height / 2;
@@ -147,9 +165,9 @@ public class FullScreenImageViewerScreen extends OverlayScreen {
         int x = centerX - imgW / 2 + (int) offsetX;
         int y = centerY - imgH / 2 + (int) offsetY;
 
-        guiGraphics.blit(texId, x, y, x + imgW, y + imgH, 0.0f, 1.0f, 0.0f, 1.0f);
+        guiGraphics.blit(texId, x, y, x + imgW, y + imgH, 0.0f, 1.0f, vMin, vMax);
 
-        String info = texWidth + "x" + texHeight + "  " + String.format("%.0f", zoom * 100) + "%";
+        String info = dispW + "x" + dispH + "  " + String.format("%.0f", zoom * 100) + "%";
         guiGraphics.drawString(font, info, 10, height - 20, 0xFFFFFFFF);
 
         boolean overImage = mouseX >= x && mouseX <= x + imgW && mouseY >= y && mouseY <= y + imgH;
