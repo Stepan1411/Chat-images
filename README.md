@@ -42,5 +42,5 @@ A Fabric mod for Minecraft 1.21.11 that lets you send and view images directly i
 
 ## Compatibility
 
-- Incompatible **with ChatAnimation**
+- Incompatible with **ChatAnimation**
 - Requires **Fabric API**
