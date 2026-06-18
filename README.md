@@ -12,21 +12,27 @@ A Fabric mod for Minecraft 1.21.11 that lets you send and view images directly i
 
 ## Screenshots
 
+
 <img width="278" height="102" alt="image" src="https://github.com/user-attachments/assets/5ae9432a-e365-4b6c-95d6-b416263ce3e2" />
 
 *Image button in chat input*
 
+
 <img width="680" height="448" alt="image" src="https://github.com/user-attachments/assets/34685c85-739d-406e-b9b3-a6e944cf83fe" />
 
-
 *Image rendered inline in chat messages*
+
 
 <img width="1920" height="1009" alt="image" src="https://github.com/user-attachments/assets/c1673b98-11a5-4b65-9eef-224d24d09997" />
 
 <img width="1920" height="1009" alt="image" src="https://github.com/user-attachments/assets/534661d1-9ca6-4a66-a21f-eec385a1abad" />
 
-
 *Fullscreen image viewer with zoom and drag*
+
+
+<img width="1920" height="1080" alt="image" src="https://github.com/Stepan1411/Chat-images/blob/main/gif_support.gif" />
+
+*Gif support*
 
 ## Usage
 
